@@ -144,7 +144,6 @@ def build_medquad_complete_xml(zip_path: Path, output_path: Path) -> int:
                 context_element = ET.SubElement(entry, "Context")
                 context_element.text = focus
 
-                # نگهداری نام فایل اصلی به عنوان مرجع منبع در ساختار XML
                 source_elem = ET.SubElement(entry, "Source")
                 source_elem.text = member.filename
 
@@ -213,7 +212,6 @@ def _object_to_dict(obj: Any) -> Dict[str, Any]:
 
 
 def _document_to_repository_row(doc: Any, default_dataset: str = "MedQuAD") -> Dict[str, Any]:
-    """تبدیل QADocument به دیکشنری برای درج در دیتابیس با متادیتای اصلاح‌شده"""
     metadata = getattr(doc, "metadata", {})
     if not isinstance(metadata, dict):
         metadata = {}
@@ -234,7 +232,6 @@ def _document_to_repository_row(doc: Any, default_dataset: str = "MedQuAD") -> D
 def _chunk_to_repository_row(chunk: DocumentChunk, default_source: str = "MedQuAD") -> Dict[str, Any]:
     """
     Convert a DocumentChunk entity to the row shape expected by the repository.
-    تضمین می‌کند فیلد source هرگز 'unknown' نباشد.
     """
     chunk_id = _get_object_value(chunk, "id", "chunk_id")
     document_id = _get_object_value(chunk, "document_id", "doc_id")
@@ -258,7 +255,6 @@ def _chunk_to_repository_row(chunk: DocumentChunk, default_source: str = "MedQuA
             + ", ".join(missing_fields)
         )
 
-    # پاک‌سازی و تضمین متادیتای منبع
     if not isinstance(metadata, dict):
         metadata = {}
 
@@ -302,7 +298,6 @@ class IngestionPipeline:
         loader = MedQuADLoader(min_q_len=20, min_a_len=40)
         loaded = loader.load(str(file_path))
         docs = list(loaded) if not isinstance(loaded, list) else loaded
-        # تزریق صریح منبع به تک تک اسناد لود شده
         for doc in docs:
             setattr(doc, "source_dataset", "MedQuAD")
             setattr(doc, "source", "MedQuAD")
@@ -316,7 +311,6 @@ class IngestionPipeline:
         loader = PubMedQALoader(min_q_len=20, min_a_len=40)
         loaded = loader.load(str(file_path))
         docs = list(loaded) if not isinstance(loaded, list) else loaded
-        # تزریق صریح منبع برای اسناد پاب‌مد
         for doc in docs:
             setattr(doc, "source_dataset", "PubMedQA")
             setattr(doc, "source", "PubMedQA")
