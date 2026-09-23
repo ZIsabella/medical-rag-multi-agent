@@ -2,11 +2,9 @@ from pathlib import Path
 
 medquad_dir = Path(r"data\raw\medquad")
 
-# ۱) تعداد فایل‌های XML چقدر است؟
 xml_files = list(medquad_dir.rglob("*.xml"))
 print(f"Total XML files: {len(xml_files)}")
 
-# ۲) اولین فایل را بررسی کن
 if not xml_files:
     print("No XML found!")
 else:
@@ -14,7 +12,6 @@ else:
     print(f"First file: {first.relative_to(medquad_dir)}")
     print(f"Size: {first.stat().st_size} bytes")
 
-    # ۳) ساختار تگ‌های آن را ببین
     import xml.etree.ElementTree as ET
     tree = ET.parse(first)
     root = tree.getroot()
