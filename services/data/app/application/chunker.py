@@ -16,14 +16,12 @@ class Chunker:
         r"""(?:[.!?]|[.!?]["'”’»)\]])(?=\s|$)"""
     )
 
-    # بهبود الگو برای شناسایی لینک‌ها
     _PDQ_LINK_ITEM_RE = re.compile(
         r"^\s*[-•*]?\s*(See the following|Types of leukemia|"
         r"(Childhood|Adult|Chronic|Acute) [A-Za-z ,'()/-]+(Treatment|Malignancies|Leukemia Treatment)\.?)\s*$",
         re.IGNORECASE,
     )
 
-    # گسترش لیست TOC و عناوین زائد PDQ
     _PDQ_TOC_HEADER_RE = re.compile(
         r"^\s*(Table of Contents|Contents|Key Points|General Information|Stages|"
         r"Treatment Options?|Risk Factors?|Related Resources?|Get More Information|"
@@ -33,7 +31,7 @@ class Chunker:
 
     def __init__(
             self,
-            size: int = 1500,  # افزایش برای حفظ پاراگراف‌ها
+            size: int = 1500, 
             overlap: int = 200,
             min_chunk_len: int = 80,
     ) -> None:
@@ -59,9 +57,7 @@ class Chunker:
 
     @classmethod
     def _strip_pdq_boilerplate(cls, text: str) -> str:
-        """
-        حذف خطوط زائد PDQ (TOC و لینک‌ها) - نیاز به کاراکترهای newline دارد.
-        """
+
         if not text:
             return ""
         lines = text.split("\n")
@@ -71,12 +67,10 @@ class Chunker:
             if not s:
                 kept.append("")
                 continue
-            # اگر خط با الگوهای TOC یا لینک‌ها مطابقت داشت، حذف شود
             if cls._PDQ_LINK_ITEM_RE.match(s) or cls._PDQ_TOC_HEADER_RE.match(s):
                 continue
             kept.append(line)
         cleaned = "\n".join(kept)
-        # فشرده‌سازی خطوط خالی اضافه
         return re.sub(r"\n{3,}", "\n\n", cleaned).strip()
 
     @classmethod
@@ -91,15 +85,11 @@ class Chunker:
 
     @classmethod
     def _build_structured_text(cls, doc: QADocument) -> str:
-        """
-        اصلاح ترتیب عملیات: ابتدا حذف boilerplate روی متن خام، سپس استفاده از متن تمیز شده.
-        """
+
         sections: List[str] = []
 
-        # کوئری کوتاه است، clean کردن آن بلامانع است
         question = cls._clean_text(getattr(doc, "question", "") or "")
 
-        # حذف بویلرپلیت ابتدا روی متن خام (با حفظ ساختار خطوط)
         raw_context = getattr(doc, "context", "") or ""
         context = cls._strip_pdq_boilerplate(raw_context)
 
@@ -115,7 +105,6 @@ class Chunker:
 
         return "\n\n".join(sections).strip()
 
-    # ... سایر متدها (_normalize_for_chunking, _find_paragraph_boundary و غیره بدون تغییر باقی می‌مانند)
 
     @staticmethod
     def _normalize_for_chunking(text: str) -> str:
