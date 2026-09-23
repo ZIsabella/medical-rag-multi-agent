@@ -108,14 +108,14 @@ class DatasetDownloader:
         """
         destination_dir.mkdir(parents=True, exist_ok=True)
 
-        import tempfile  # مطمئن شوید در بالای فایل هست
+        import tempfile
 
         # ... داخل متد _download_to_temp_file ...
 
         temp_file = tempfile.NamedTemporaryFile(
             mode="wb",
             delete=False,
-            dir=tempfile.gettempdir(),  # تغییر به مسیر /tmp کانتینر که همیشه Writeable است
+            dir=tempfile.gettempdir(), 
             prefix=".download_",
             suffix=".tmp",
         )
