@@ -1,0 +1,145 @@
+
+# ==========================================
+# 1. Heavy Wheels & Binaries (بسیار مهم طبق درخت شما)
+# ==========================================
+wheels/
+*.whl
+*.dll
+*.lib
+*.so
+*.dylib
+*.exe
+
+# ==========================================
+# 2. Python Virtual Environments & Packages
+# ==========================================
+.venv/
+venv/
+env/
+ENV/
+Scripts/
+Lib/
+Include/
+*.dist-info/
+*.egg-info/
+build/
+dist/
+
+# ==========================================
+# 3. Python Caches & Bytecode
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================================
+# 4. Large Datasets & Ingestion Data
+# ==========================================
+data/raw/
+data/processed/
+*.zip
+*.tar.gz
+*.xml
+*.jsonl
+
+# ==========================================
+# 5. Frontend & Node (Next.js / React)
+# ==========================================
+node_modules/
+.next/
+out/
+.npm/
+
+# ==========================================
+# 6. Secrets & Environment Variables
+# ==========================================
+.env
+.env*.local
+*.pem
+*.key
+
+# ==========================================
+# 7. IDE & OS Junk
+# ==========================================
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ==========================================
+# 8. Logs
+# ==========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+
+# Environment variables
+rag_evaluation_results
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+.spyproject/
+.spyderproject
+.spyderworkspace
+.ipynb_checkpoints/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Models and caches
+models/
+model_cache/
+.cache/
+huggingface/
+
+# Datasets
+data/raw/
+data/processed/
+data/interim/
+.dvc/
+
+# Database
+postgres_data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker overrides
+docker-compose.override.yml
+
+# Temporary files
+tmp/
+temp/
+
+
+node_modules/
+wheels/

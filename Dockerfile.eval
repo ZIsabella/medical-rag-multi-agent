@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# نصب پکیج‌ها از میرور
+RUN pip install --no-cache-dir \
+    -i https://mirror-pypi.runflare.com/simple \
+    httpx psycopg2-binary asyncpg rouge_score bert-score nltk
+
+# دانلود دیتای nltk
+RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('wordnet')"
+
+CMD ["python", "evaluate_rag.py"]

@@ -1,0 +1,4 @@
+**/*
+!services/llm/app/
+!services/llm/requirements.txt
+!wheels/

@@ -1,0 +1,209 @@
+services:
+
+  stress-eval:
+    build:
+      context: .
+      dockerfile: services/stress_eval/Dockerfile
+    container_name: stress_eval
+    working_dir: /app
+    volumes:
+      - ./mlruns:/app/mlruns
+      - ./services/stress_eval:/app
+    environment:
+      - ORCHESTRATOR_HOST=orchestrator-service
+      - ORCHESTRATOR_PORT=8000
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
+    restart: "no"
+    networks:
+      - medical-rag-net
+    profiles: ["tools", "manual"]
+
+  metrics-eval:
+    build:
+      context: .
+      dockerfile: services/metrics_eval/Dockerfile
+    container_name: metrics_eval
+    working_dir: /app
+    volumes:
+      - ./services/metrics_eval:/app
+      - ./models:/app/models
+      - ./mlruns:/app/mlruns
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      - POSTGRES_HOST=postgres
+      - DB_NAME=medical_rag
+      - DB_USER=medical_user
+      - DB_PASSWORD=GAPGPTMASKTOKENwa3dqu5913iX1X
+      - ORCHESTRATOR_URL=http://orchestrator-service:8000/api/v1/chat
+      - PYTHONUNBUFFERED=1
+    networks:
+      - medical-rag-net
+    profiles: ["tools", "manual"]
+
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: medical_postgres
+    restart: on-failure
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init_schema.sql:/docker-entrypoint-initdb.d/init_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - medical-rag-net
+
+  redis:
+    image: redis:alpine
+    container_name: medical_redis
+    restart: on-failure
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - medical-rag-net
+
+  data-service:
+    build:
+      context: .
+      dockerfile: services/data/Dockerfile
+    container_name: medical_data
+    restart: on-failure
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./models:/models:ro
+      - ./wheels:/app/wheels
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - EMBEDDING_MODEL_NAME=/models/bge-small-en-v1.5
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - medical-rag-net
+
+  llm-service:
+    build:
+      context: .
+      dockerfile: services/llm/Dockerfile
+    container_name: medical_llm
+    restart: on-failure
+    ports:
+      - "8002:8002"
+    environment:
+      - MODEL_PATH=/models/BioMistral-7B-DARE-GGUF/BioMistral-7B-DARE-Q4_K_M.gguf
+      - N_CTX=8192
+      - N_THREADS=6
+      - PYTHONPATH=/app
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./models:/models:ro 
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - medical-rag-net
+
+  ingest-worker:
+    build:
+      context: .
+      dockerfile: services/ingest/Dockerfile
+    container_name: medical_ingest
+    profiles: ["manual"]
+    volumes:
+      - ./models:/models:ro
+      - ./services/data/data/raw:/app/data/raw
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - RAW_DATA_DIR=/app/data/raw
+      - PYTHONPATH=/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - medical-rag-net
+
+  orchestrator-service:
+    build:
+      context: .
+      dockerfile: services/orchestrator/Dockerfile
+    container_name: medical_orchestrator
+    restart: on-failure
+    ports:
+      - "8000:8000"
+    environment:
+      - DATA_SERVICE_URL=${DATA_SERVICE_URL}
+      - LLM_SERVICE_URL=${LLM_SERVICE_URL}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      data-service:
+        condition: service_healthy
+      llm-service:
+        condition: service_healthy
+    networks:
+      - medical-rag-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: medical_frontend
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    environment:
+      - ORCHESTRATOR_URL=http://orchestrator-service:8000/api/v1/chat
+      - DATA_SERVICE_URL=${DATA_SERVICE_URL}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      orchestrator-service:
+        condition: service_healthy
+    networks:
+      - medical-rag-net
+
+networks:
+  medical-rag-net:
+    driver: bridge
+volumes:
+  hf_cache:

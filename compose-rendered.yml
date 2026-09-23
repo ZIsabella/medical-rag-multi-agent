@@ -1,0 +1,171 @@
+name: medical-rag-multi-agent
+services:
+
+  data-service:
+    build:
+      context: ./services/data
+      dockerfile:Dockerfile
+    container_name: medical-rag-data
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: true
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql://medical_user:medical_password@postgres:5432/medical_rag
+      EMBEDDING_MODEL_NAME: /models/bge-small-en-v1.5
+      EMBEDDING_MODEL_PATH: /models/bge-small-en-v1.5
+      HF_HUB_OFFLINE: "1"
+      PYTHONPATH: /app
+      RAW_DATA_DIR: /data/raw
+      TRANSFORMERS_OFFLINE: "1"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8001/health')
+      timeout: 5s
+      interval: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      medical-rag-network: null
+    ports:
+      - mode: ingress
+        target: 8001
+        published: "8001"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: bind
+        source: F:\Agentic1\medical-rag-multi-agent\services\data\data\raw
+        target: /data/raw
+        bind: {}
+      - type: bind
+        source: F:\Agentic1\medical-rag-multi-agent\models\bge-small-en-v1.5
+        target: /models/bge-small-en-v1.5
+        read_only: true
+        bind: {}
+
+  llm-service:
+    build:
+      context: ./services/llm
+      dockerfile: Dockerfile
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8002"
+    container_name: medical-rag-llm
+    environment:
+      CHAT_FORMAT: mistral-instruct
+      MAX_TOKENS: "512"
+      MODEL_PATH: /models/BioMistral-7B-DARE-Q4_K_M.gguf
+      N_BATCH: "128"
+      N_CTX: "8192"
+      N_GPU_LAYERS: "0"
+      N_THREADS: "0"
+      SYSTEM_PROMPT: You are a strict retrieval-grounded medical question-answering
+        assistant. Use only the provided context.
+      TEMPERATURE: "0.2"
+      TOP_P: "0.9"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8002/health')
+      timeout: 5s
+      interval: 10s
+      retries: 3
+      start_period: 2m0s
+    networks:
+      medical-rag-network: null
+    ports:
+      - mode: ingress
+        target: 8002
+        published: "8002"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: bind
+        source: F:/Agentic1/medical-rag-multi-agent/models/BioMistral-7B-DARE-GGUF
+        target: /models
+        read_only: true
+
+  orchestrator-service:
+    build:
+      context: ./services/orchestrator
+      dockerfile: Dockerfile
+    container_name: medical-rag-orchestrator
+    depends_on:
+      data-service:
+        condition: service_healthy
+        required: true
+      llm-service:
+        condition: service_healthy
+        required: true
+    environment:
+      APP_ENV: development
+      DATA_SERVICE_URL: http://data-service:8001
+      LLM_SERVICE_URL: http://llm-service:8002
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health')
+      timeout: 5s
+      interval: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      medical-rag-network: null
+    ports:
+      - mode: ingress
+        target: 8000
+        published: "8008"
+        protocol: tcp
+    restart: always
+
+  postgres:
+    container_name: medical-rag-postgres
+    environment:
+      POSTGRES_DB: medical_rag
+      POSTGRES_PASSWORD: medical_password
+      POSTGRES_USER: medical_user
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U medical_user -d medical_rag
+      timeout: 5s
+      interval: 5s
+      retries: 5
+    image: pgvector/pgvector:pg16
+    networks:
+      medical-rag-network: null
+    ports:
+      - mode: ingress
+        target: 5432
+        published: "5433"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql/data
+        volume: {}
+      - type: bind
+        source: F:\Agentic1\medical-rag-multi-agent\database\init
+        target: /docker-entrypoint-initdb.d
+        bind: {}
+networks:
+  medical-rag-network:
+    name: medical-rag-multi-agent_medical-rag-network
+    driver: bridge
+volumes:
+  postgres_data:
+    name: medical-rag-multi-agent_postgres_data
