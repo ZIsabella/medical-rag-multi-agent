@@ -38,17 +38,14 @@ async def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
     async def event_generator():
-        # ارسال کامنت استاندارد اولیه برای حفظ باز بودن کانکشن
         yield ": ping\n\n"
         full_response = ""
         try:
             async for item in agent.run_stream(request.query, request.chat_history):
                 if isinstance(item, dict):
-                    # ارسال بسته‌های داده متادیتا یا خطا
                     yield f"data: {json.dumps(item)}\n\n"
                 elif isinstance(item, str):
                     full_response += item
-                    # ارسال دقیق توکن به کلاینت (حفظ فاصله‌های درونی توکن)
                     yield f"data: {item}\n\n"
 
             yield "data: [DONE]\n\n"
