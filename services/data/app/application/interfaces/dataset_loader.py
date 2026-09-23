@@ -5,5 +5,4 @@ from app.domain.documents import QADocument
 class DatasetLoader(ABC):
     @abstractmethod
     def load(self) -> Iterable[QADocument]:
-        """داده‌ها را خوانده و به صورت QADocument جنریت می‌کند."""
         pass
