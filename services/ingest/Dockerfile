@@ -13,10 +13,8 @@ COPY services/ingest/requirements.txt /app/requirements.txt
 RUN --mount=type=bind,source=wheels,target=/app/wheels \
     pip install --no-cache-dir --no-index --find-links=/app/wheels -r /app/requirements.txt
 
-# کپی کردن ماژول‌های برنامه (app) از data service برای ایمپورت‌های chunker، domain و repositories
 COPY services/data/app /app/app
 
-# کپی کردن فایل‌های اختصاصی ingest
 COPY services/ingest/ /app/
 
 CMD ["python", "ingest.py"]
