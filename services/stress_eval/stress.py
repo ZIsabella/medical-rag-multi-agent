@@ -4,10 +4,10 @@ import httpx
 import os
 import mlflow
 
-# فعال‌سازی استفاده از فایل‌استور در MLflow
+
 os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
 
-# ==================== تنظیمات ====================
+# ========================================
 HOST = os.getenv("ORCHESTRATOR_HOST", "orchestrator-service")
 PORT = os.getenv("ORCHESTRATOR_PORT", "8000")
 API_URL = f"http://{HOST}:{PORT}/api/v1/chat"
