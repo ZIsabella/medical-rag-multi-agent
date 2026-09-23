@@ -5,7 +5,6 @@ _model = None
 def get_model() -> SentenceTransformer:
     global _model
     if _model is None:
-        # بارگذاری سنگین فقط یک‌بار
         _model = SentenceTransformer("BAAI/bge-m3")
     return _model
 
