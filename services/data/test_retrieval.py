@@ -6,7 +6,6 @@ from app.infrastructure.repositories.postgres_repository import PostgresReposito
 from app.application.embedding_service import EmbeddingService
 
 # --- Configuration ---
-# تغییر postgres به localhost برای دسترسی از ویندوز
 DATABASE_URL = "postgresql://medical_user:medical_password@localhost:5432/medical_rag"
 TEST_QUERY = "What is Adult Acute Lymphoblastic Leukemia?"
 SEARCH_LIMIT = 3
