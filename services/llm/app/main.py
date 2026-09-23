@@ -69,7 +69,6 @@ async def stream_generator(
     prompt: str, max_tokens: int, temperature: float, stop: Optional[List[str]]
 ) -> AsyncGenerator[str, None]:
     try:
-        # ساخت جنریتور استریم
         response_iter = llm.create_completion(
             prompt=prompt,
             max_tokens=max_tokens,
@@ -80,14 +79,12 @@ async def stream_generator(
 
         for chunk in response_iter:
             text = chunk["choices"][0].get("text", "")
-            # ارسال با ساختار سازگار با انواع ارزیاب‌ها و OpenAI format
             payload = json.dumps({
                 "text": text,
                 "response": text,
                 "choices": [{"delta": {"content": text}, "text": text}],
             })
             yield f"data: {payload}\n\n"
-            # جلوگیری از مسدود ماندن حلقه async در پردازش CPU
             await asyncio.sleep(0)
 
         yield "data: [DONE]\n\n"
@@ -128,7 +125,6 @@ async def handle_generate(req: GenerateRequest):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-# پشتیبانی همزمان از هر دو مسیر برای جلوگیری از خطای ۴۰۴ در تمام سرویس‌ها
 @app.post("/api/v1/generate")
 async def generate_v1(req: GenerateRequest):
     return await handle_generate(req)
