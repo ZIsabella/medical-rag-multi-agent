@@ -25,7 +25,6 @@ NON_MEDICAL_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# اضافه کردن الگوهای پرسش شخصی و خانوادگی
 PERSONAL_QUERY_PATTERN = re.compile(
     r"\b(who\s+am\s+i|what\s+is\s+my\s+name|where\s+do\s+i\s+live|my\s+name\s+is|"
     r"what\s+is\s+.*'s\s+name|who\s+is\s+.*'s\s+mother|who\s+is\s+.*'s\s+father|tell\s+me\s+about\s+my|my\s+friend)\b",
@@ -275,13 +274,11 @@ class MedicalAgent:
     ) -> AsyncGenerator[Any, None]:
         cleaned_query = query.strip()
 
-        # گیت سوالات هویتی و شخصی
         if PERSONAL_QUERY_PATTERN.search(cleaned_query):
             yield {"retrieved_context": "", "sources": []}
             yield NON_MEDICAL_MESSAGE
             return
 
-        # گیت فوری سوالات غیرپزشکی عمومی
         if NON_MEDICAL_PATTERN.search(cleaned_query):
             yield {"retrieved_context": "", "sources": []}
             yield NON_MEDICAL_MESSAGE
@@ -291,13 +288,11 @@ class MedicalAgent:
         context = retrieval.get("context", "")
         sources = retrieval.get("sources", [])
 
-        # ارسال متادیتا به سمت کلاینت
         yield {
             "retrieved_context": context,
             "sources": sources,
         }
 
-        # در صورتی که دیتابیس هیچ متنی نیافت
         if not context or len(context.strip()) < 10:
             yield ABSTENTION_MESSAGE
             return
