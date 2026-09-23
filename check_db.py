@@ -5,7 +5,6 @@ import asyncpg
 async def check_content():
     conn = await asyncpg.connect("postgresql://medical_user:medical_password@localhost:5432/medical_rag")
 
-    # ۱. پیدا کردن ردیف‌هایی که سوال آن‌ها خالی یا فقط فضای خالی است
     empty_questions = await conn.fetchval("""
         SELECT COUNT(*) FROM documents 
         WHERE question IS NULL 
@@ -13,7 +12,6 @@ async def check_content():
            OR TRIM(question) = ''
     """)
 
-    # ۲. پیدا کردن ردیف‌هایی که سوال دارند (برای تست)
     valid_questions = await conn.fetchval("""
         SELECT COUNT(*) FROM documents 
         WHERE question IS NOT NULL 
